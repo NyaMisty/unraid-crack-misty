@@ -27,10 +27,12 @@ static char* unraid_version = NULL;
 RSA_PUBLIC_DECRYPT_FUNC rsa_public_decrypt;
 static HookInformation HOOKINFO_rsa_public_decrypt;
 
-int get_dev_path(char* buffer, size_t size);
-int get_usb_device(char* buffer, size_t size);
-int get_serial_string(char* buffer, size_t size);
-void read_file(char* buff_ptr, char* base_ptr, char* file_ptr, char* file);
+// must be static or /usr/lib64/libsmbd-base-samba4.so(smbd_smb2_request_process_read+0x70d) will reference us
+// also needs -fvisibility=hidden
+static int get_dev_path(char* buffer, size_t size);
+static int get_usb_device(char* buffer, size_t size);
+static int get_serial_string(char* buffer, size_t size);
+static void read_file(char* buff_ptr, char* base_ptr, char* file_ptr, char* file);
 static int hook_RSA_public_decrypt(int flen, unsigned char* from, unsigned char* to,
                        RSA* rsa, int padding);
 
@@ -64,7 +66,7 @@ __attribute__((constructor)) void unraid_init() {
   init_unraid_hook();
 }
 
-const char* get_self_exe_name(int full) {
+static const char* get_self_exe_name(int full) {
   static char buffer[4096] = "";
   readlink("/proc/self/exe", buffer, 4096);
   if (full) {
@@ -89,7 +91,7 @@ static int hook_RSA_public_decrypt(int flen, unsigned char* from, unsigned char*
 }
 
 /**** udev stuff ****/
-int get_dev_path(char* buffer, size_t size) {
+static int get_dev_path(char* buffer, size_t size) {
   char link_device[1024];
   char real_device[1024];
 
@@ -148,7 +150,7 @@ int get_dev_path(char* buffer, size_t size) {
   return find;
 }
 
-int get_usb_device(char* buffer, size_t size) {
+static int get_usb_device(char* buffer, size_t size) {
   char dev_path[1024];
   if (get_dev_path(dev_path, 1024)) {
     return 2;
@@ -178,14 +180,14 @@ int get_usb_device(char* buffer, size_t size) {
   return find;
 }
 
-void read_file(char* buff_ptr, char* base_ptr, char* file_ptr, char* file) {
+static void read_file(char* buff_ptr, char* base_ptr, char* file_ptr, char* file) {
   strcpy(file_ptr, file);
   FILE* fp = fopen(base_ptr, "r");
   fscanf(fp, "%s", buff_ptr);
   fclose(fp);
 }
 
-int get_serial_string(char* buffer, size_t size) {
+static int get_serial_string(char* buffer, size_t size) {
   char usb_device[1024];
   if (get_usb_device(usb_device, 1024)) {
     return 2;
@@ -220,11 +222,11 @@ int get_serial_string(char* buffer, size_t size) {
   return 0;
 }
 
-int main() {
+/*int main() {
   char serial[1024];
   int err = get_serial_string(serial, 1024);
   if (!err) {
     printf("SERIAL: %s\n", serial);
   }
   return 0;
-}
+}*/
