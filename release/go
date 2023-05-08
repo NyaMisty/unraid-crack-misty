@@ -1,0 +1,10 @@
+#!/bin/bash
+# Start the Management Utility
+
+export UNRAID_NAME=Misty
+export UNRAID_DATE=1654646400
+export UNRAID_VERSION=Pro
+
+LD_PRELOAD=/boot/config/test.so /usr/local/sbin/emhttp >>/tmp/emhttp.log 2>&1 &
+
+#/usr/local/sbin/emhttp &
