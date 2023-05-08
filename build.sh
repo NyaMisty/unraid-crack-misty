@@ -1,0 +1,1 @@
+gcc -fPIC -shared -fvisibility=hidden test.c -ludev -ldl -o test.so
