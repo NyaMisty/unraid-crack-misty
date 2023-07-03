@@ -29,12 +29,20 @@ static HookInformation HOOKINFO_rsa_public_decrypt;
 
 // must be static or /usr/lib64/libsmbd-base-samba4.so(smbd_smb2_request_process_read+0x70d) will reference us
 // also needs -fvisibility=hidden
-static int get_dev_path(char* buffer, size_t size);
-static int get_usb_device(char* buffer, size_t size);
 static int get_serial_string(char* buffer, size_t size);
-static void read_file(char* buff_ptr, char* base_ptr, char* file_ptr, char* file);
 static int hook_RSA_public_decrypt(int flen, unsigned char* from, unsigned char* to,
                        RSA* rsa, int padding);
+
+static const char* get_self_exe_name(int full) {
+  static char buffer[4096] = "";
+  readlink("/proc/self/exe", buffer, 4096);
+  if (full) {
+    return buffer;
+  }
+  char* ptr = &buffer[strlen(buffer)];
+  while (*ptr != '/') --ptr;
+  return (ptr + 1);
+}
 
 static void init_unraid_uuid() {
   if (!unraid_uuid) {
@@ -62,19 +70,11 @@ static void init_unraid_hook() {
 }
 
 __attribute__((constructor)) void unraid_init() {
-  init_unraid_uuid();
-  init_unraid_hook();
-}
-
-static const char* get_self_exe_name(int full) {
-  static char buffer[4096] = "";
-  readlink("/proc/self/exe", buffer, 4096);
-  if (full) {
-    return buffer;
+  if (!strcmp(get_self_exe_name(0), "emhttpd") ||
+      !strcmp(get_self_exe_name(0), "shfs")) {
+    init_unraid_uuid();
+    init_unraid_hook();
   }
-  char* ptr = &buffer[strlen(buffer)];
-  while (*ptr != '/') --ptr;
-  return (ptr + 1);
 }
 
 static int hook_RSA_public_decrypt(int flen, unsigned char* from, unsigned char* to,
